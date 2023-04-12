@@ -2,14 +2,14 @@ include("gas.jl")
 
 mutable struct System
     #spatial parameters
-    const L::Tuple{Vararg{Float64, 3}} #the size in each dimension
+    const L::NTuple{3, Float64} #the size in each dimension
     const Vol::Float64 #volume of the system
 
     #spatial resolution
-    const Ncell::Tuple{Vararg{Int64, 3}} #the number of cells in each dimension
+    const Ncell::NTuple{3, Int64} #the number of cells in each dimension
     const Ncell_tot::Float64 #total number of cells
     const Volcell::Float64 #Volume of cell
-    const dL::Tuple{Vararg{Float64, 3}} #the length of a cell in each dimensions
+    const dL::NTuple{3, Float64} #the length of a cell in each dimensions
 
     #particles parameters
     const gas::Gas
@@ -21,7 +21,7 @@ mutable struct System
     r::Matrix{Float64}
     v::Matrix{Float64}
 
-    function System(L::Tuple{Vararg{Float64, 3}}, Ncell::Tuple{Vararg{Int64, 3}},
+    function System(L::NTuple{3, Float64}, Ncell::NTuple{3, Int64},
                     gas::Gas, ρ::Real, Nsim::Integer, 
                     v_init::Real)
         n = ρ_to_n(ρ, gas)
@@ -41,3 +41,23 @@ mutable struct System
     end
 end
 
+
+const kb = 1.380649e-23 #Boltzmann constant
+struct SystemProperties
+    E::Vector{Float64}
+    Etot::Float64
+
+    kT::Float64
+    T::Float64
+
+    function SystemProperties(sys::System)
+        D = length(sys.L)
+
+        E = vec(0.5*sys.gas.m*sum(sys.v.^2, dims=1) * sys.Neff)
+        Etot = sum(E)
+        kT = Etot/sys.Nphys * (2/D)
+        T = kT/kb
+
+        new(E, Etot, kT, T)
+    end
+end

@@ -1,15 +1,8 @@
 using Plots
+using Printf
 using Distributions
 using HypothesisTests
 
-# function plot_system(x,y,z; xlim, ylim, zlim)
-#     plt = scatter3d(
-#         x,y,z,
-#         xlim = xlim, ylim = ylim, zlim = zlim,
-#         legend = false,
-#         marker = 3,
-#     )
-# end
 
 function animate_system(samp)
     anim = @animate for i in 1:length(samp.t)
@@ -24,27 +17,23 @@ function animate_system(samp)
     gif(anim, "anim.gif", fps = 5)
 end
 
-
-function plot_energy(samp)
-    plot(samp.t, sum.(samp.E) )
-end
-
 function plot_thermalization(samp)
     Nsim = samp.sys[1].Nsim
 
-    E_total = sum(samp.E[end])
+    E_total = sum(samp.sysProp[end].E)
     kT = (2/3) * (E_total/Nsim) # because N*E_mean = 3/2 * kT
     E_array = range(0.05*kT, 6*kT, 200)
     
     #calculate Kolmogorov-Smirnov test
     MB = Gamma(3/2, kT)
     ymax = maximum(pdf.(MB, E_array))*1.3
-    println(OneSampleADTest(samp.E[end], MB))
-    println(ExactOneSampleKSTest(samp.E[end], MB))
 
     anim = @animate for i in 1:length(samp.t)
-        histogram(samp.E[i], bins=range(0.05*kT, 6*kT, 30), title=string(i), ylim=(0, ymax), normalize=:pdf, label="Particle Energy")
+        KS_pvalue = pvalue(ExactOneSampleKSTest(samp.sysProp[i].E, MB))
+        title = @sprintf "time=%.2f, Kolmogorov-Smirnov p value=%.2f" samp.t[i] KS_pvalue
+        histogram(samp.sysProp[i].E, bins=range(0.05*kT, 6*kT, 30), title=title, ylim=(0, ymax), normalize=:pdf, label="Particle Energy")
         plot!(E_array, pdf.(MB, E_array), xlim=(0.05*kT, 6*kT), ylim=(0, ymax),label="Maxwell-Boltzmann")
     end
-    gif(anim, "anim.gif", fps = 5)
+
+    gif(anim, fps = 5)
 end
