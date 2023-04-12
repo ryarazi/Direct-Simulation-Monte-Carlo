@@ -4,13 +4,13 @@ include("visual.jl")
 include("sampler.jl")
 include("gas.jl")
 include("system.jl")
+include("boundary.jl")
 
 function main(;sys::System, Nsteps)
     #collision parameter
-    v_init = abs(sys.v[1,1])
-    vr_max = 5*v_init
+    vr_max = 5*maximum(sys.v)
 
-    dt = 0.09*minimum(sys.dL)/v_init
+    dt = 0.1*minimum(sys.dL)/vr_max
 
     samp = Sampler()
 
@@ -20,26 +20,12 @@ function main(;sys::System, Nsteps)
     while i_loop<Nsteps
         sys.r += dt * sys.v
 
-        #check for specular reflections
-        for ip in 1:sys.Nsim #ip = i_particle
-            for axis in 1:3
-                if sys.r[axis, ip] >= sys.L[axis]
-                    sys.r[axis, ip]=2*sys.L[axis]-sys.r[axis, ip]
-                    sys.v[axis, ip]*=-1
-                elseif sys.r[axis, ip] <= 0.
-                    sys.r[axis, ip]=-sys.r[axis, ip]
-                    sys.v[axis, ip]*=-1
-                end
-            end
-        end
+        apply_boundary(sys, SpecularWall())
 
         #index particles to cells
         particles_in_cells = reshape([Int64[] for _ in 1:sys.Ncell_tot], sys.Ncell)
 
-        particle_cell = similar(sys.r, Int64)
-        for ip in 1:sys.Nsim #ip = i_particle
-            particle_cell[:, ip] = floor.(Int, sys.r[:, ip]./sys.dL[:]) .+ 1
-        end
+        particle_cell = floor.(Int, sys.r[:, :]./sys.dL[:]) .+ 1
 
         for ip in 1:sys.Nsim
             ix, iy, iz = particle_cell[:, ip]
@@ -81,7 +67,7 @@ function main(;sys::System, Nsteps)
         end
 
         #sample
-        if i_loop%100 == 0
+        if i_loop%50 == 0
             sample!(samp, t, sys)
         end
 
@@ -96,6 +82,6 @@ function main(;sys::System, Nsteps)
     plot_thermalization(samp)
 end
 
-sys = System((1.e-6, 1.e-6, 1.e-6), (1, 1, 1), argon, 1.78, 2000, 400.)
+sys = System((1.e-6, 1.e-6, 1.e-6), (20, 1, 1), argon, 1.78, 2000, 400.)
 main(sys=sys,
-     Nsteps=10000)
+     Nsteps=1000)
