@@ -16,6 +16,11 @@ function simulate_dsmc(;sys::System,
 
     samp = Sampler()
 
+    #preallocate memory for arrays
+    cc2cl = LinearIndices(sys.Ncell) #"cell cartesian to linear" - transform cartesian cell index to linear cell index
+    p2cl = Vector{Float64}(undef, sys.Nsim) #"particle to cell linear" - index of particle to the index of it's cell
+    sp2p = Vector{Int64}(undef, sys.Nsim) #"sorted particle to particle" - index of particles as they are sorted by their cell
+
     #main loop
     t=0.
     i_loop=0
@@ -25,28 +30,40 @@ function simulate_dsmc(;sys::System,
         apply_boundary(sys, boundary)
 
         #index particles to cells
-        cell_indices = LinearIndices(sys.Ncell)
-        particles_in_cells = [Int64[] for _ in 1:sys.Ncell_tot]
-
-        particle_cell = floor.(Int, sys.r./sys.dL) .+ 1
-        particle_cell_linear = [cell_indices[xyz_index...] for xyz_index in eachcol(particle_cell)]
-
         for ip in 1:sys.Nsim
-            push!(particles_in_cells[particle_cell_linear[ip]], ip)
+            i = (floor(Int, sys.r[d,ip]/sys.dL[d]) + 1 for d in 1:length(sys.L))
+            p2cl[ip] = cc2cl[i...]
         end
+        sortperm!(sp2p, p2cl)
 
         #calculate collisions
-        for particle_list in particles_in_cells
-            n_particles = length(particle_list)
+        cell_start = 1
+        cell_index = p2cl[sp2p[cell_start]]
+        for i in 2:sys.Nsim+1
+            if i!=sys.Nsim+1 && p2cl[sp2p[i]] == cell_index continue end
+
+            cell_end = i-1
+            cell_range = cell_start:cell_end
+            
+            if i!=sys.Nsim+1
+                cell_start = i
+                cell_index = p2cl[sp2p[cell_start]]
+            end
+
+            n_particles = length(cell_range)
+
             if n_particles<2 continue end #not enough particles for collisions
             
             candidates = n_particles^2 * sys.Neff * pi * sys.gas.d^2 * vr_max * dt / 2. / sys.Volcell
             for _ in 1:candidates
-                p1 = rand(1:n_particles)
-                p2 = rand(1:n_particles)
-                while p1==p2 p2=rand(1:n_particles) end
-                ip1 = particle_list[p1]
-                ip2 = particle_list[p2]
+
+                #generate two different random particles in the cell
+                i1 = rand(cell_range)
+                i2 = rand(cell_range)
+                while i1==i2 i2=rand(cell_range) end
+
+                ip1 = sp2p[i1]
+                ip2 = sp2p[i1]
 
                 v1 = sys.v[:, ip1]
                 v2 = sys.v[:, ip2]

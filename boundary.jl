@@ -6,7 +6,7 @@ struct Periodic <: BoundaryCondition end
 
 function apply_boundary(sys::System, ::SpecularWall)
     for ip in 1:sys.Nsim #ip = i_particle
-        for axis in 1:3
+        for axis in 1:length(sys.L)
             if sys.r[axis, ip] >= sys.L[axis]
                 sys.r[axis, ip]=2*sys.L[axis]-sys.r[axis, ip]
                 sys.v[axis, ip]*=-1
