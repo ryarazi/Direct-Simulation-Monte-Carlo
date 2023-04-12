@@ -6,7 +6,7 @@ include("gas.jl")
 include("system.jl")
 include("boundary.jl")
 
-function main(;sys::System,
+function simulate_dsmc(;sys::System,
                Nsteps, Nsample,
                boundary::T=SpecularWall()) where {T<:BoundaryCondition}
     #collision parameter
