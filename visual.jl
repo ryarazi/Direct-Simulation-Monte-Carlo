@@ -24,13 +24,12 @@ function plot_thermalization(samp)
     kT = (2/3) * (E_total/Nsim) # because N*E_mean = 3/2 * kT
     E_array = range(0.05*kT, 6*kT, 200)
     
-    #calculate Kolmogorov-Smirnov test
     MB = Gamma(3/2, kT)
     ymax = maximum(pdf.(MB, E_array))*1.3
 
     anim = @animate for i in 1:length(samp.t)
-        KS_pvalue = pvalue(ExactOneSampleKSTest(samp.sysProp[i].E, MB))
-        title = @sprintf "time=%.2f, Kolmogorov-Smirnov p value=%.2f" samp.t[i] KS_pvalue
+        AD_pvalue = pvalue(OneSampleADTest(samp.sysProp[i].E, MB))
+        title = @sprintf "time=%.2f, Anderson-Darling p value=%.2f" samp.t[i] AD_pvalue
         histogram(samp.sysProp[i].E, bins=range(0.05*kT, 6*kT, 30), title=title, ylim=(0, ymax), normalize=:pdf, label="Particle Energy")
         plot!(E_array, pdf.(MB, E_array), xlim=(0.05*kT, 6*kT), ylim=(0, ymax),label="Maxwell-Boltzmann")
     end

@@ -78,7 +78,3 @@ function main(;sys::System,
 
     return samp
 end
-
-sys = System((1.e-6, 1.e-6, 1.e-6), (20, 1, 1), argon, 1.78, 2000, 400.)
-main(sys=sys,
-     Nsteps=2000)
