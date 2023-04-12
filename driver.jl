@@ -25,7 +25,7 @@ function simulate_dsmc(;sys::System,
     t=0.
     i_loop=0
     while i_loop<Nsteps
-        sys.r += dt * sys.v
+        @. sys.r += dt * sys.v
 
         apply_boundary(sys, boundary)
 
@@ -78,8 +78,8 @@ function simulate_dsmc(;sys::System,
                 sin_theta = sqrt(1-cos_theta^2)
                 v_relative_new = v_relative_norm .* (sin_theta*cos_phi, sin_theta*sin_phi, cos_theta)
 
-                sys.v[:, ip1] = v_center_mass .+ 0.5.*v_relative_new
-                sys.v[:, ip2] = v_center_mass .- 0.5.*v_relative_new
+                @. sys.v[:, ip1] = v_center_mass + 0.5*v_relative_new
+                @. sys.v[:, ip2] = v_center_mass - 0.5*v_relative_new
             end
         end
 
