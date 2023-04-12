@@ -56,14 +56,13 @@ function simulate_dsmc(;sys::System,
             
             candidates = n_particles^2 * sys.Neff * pi * sys.gas.d^2 * vr_max * dt / 2. / sys.Volcell
             for _ in 1:candidates
-
                 #generate two different random particles in the cell
                 i1 = rand(cell_range)
                 i2 = rand(cell_range)
                 while i1==i2 i2=rand(cell_range) end
 
                 ip1 = sp2p[i1]
-                ip2 = sp2p[i1]
+                ip2 = sp2p[i2]
 
                 v1 = sys.v[:, ip1]
                 v2 = sys.v[:, ip2]

@@ -29,7 +29,7 @@ function plot_thermalization(samp)
 
     anim = @animate for i in 1:length(samp.t)
         AD_pvalue = pvalue(OneSampleADTest(samp.sysProp[i].E, MB))
-        title = @sprintf "time=%.2f, Anderson-Darling p value=%.2f" samp.t[i] AD_pvalue
+        title = @sprintf "time=%.2g, Anderson-Darling p value=%.2f" samp.t[i] AD_pvalue
         histogram(samp.sysProp[i].E, bins=range(0.05*kT, 6*kT, 30), title=title, ylim=(0, ymax), normalize=:pdf, label="Particle Energy")
         plot!(E_array, pdf.(MB, E_array), xlim=(0.05*kT, 6*kT), ylim=(0, ymax),label="Maxwell-Boltzmann")
     end
